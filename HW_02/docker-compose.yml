@@ -1,0 +1,32 @@
+version: '3.7'
+
+services:
+  db:
+    image: postgres:15.6-alpine
+    healthcheck:
+      test: [ 'CMD-SHELL', 'pg_isready -U postgres' ]
+      interval: 10s
+      start_period: 40s
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      PGTZ: ${TIME_ZONE:-Europe/Moscow}
+    volumes:
+      - ./postgres:/var/lib/postgresql/data:rw
+    ports:
+      - '5434:5432'
+
+  client:
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: root
+    ports:
+      - "5050:80"
+    volumes:
+      - client:/var/lib/pgadmin
+
+volumes:
+  client: { }
