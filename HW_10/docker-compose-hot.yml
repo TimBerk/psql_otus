@@ -1,0 +1,85 @@
+version: '3.8'
+
+x-common-healthcheck: &common-healthcheck
+  test: [ 'CMD-SHELL', 'pg_isready -U postgres' ]
+  interval: 10s
+  start_period: 40s
+
+x-common-variables: &common-variables
+  POSTGRES_DB: ${POSTGRES_DB:-postgres}
+  POSTGRES_USER: ${POSTGRES_USER:-postgres}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+  PGTZ: ${TIME_ZONE:-Europe/Moscow}
+  PR_REPL_HOST: ${PR_REPL_PORT:-master_01}
+  PR_REPL_PORT: ${PR_REPL_PORT:-5432}
+  PR_REPL_DB: ${PR_REPL_DB:-replication}
+  PR_REPL_USER: ${PR_REPL_USER:-rep_user}
+  PR_REPL_PASSWORD: ${PR_REPL_PASSWORD:-rep_pass}
+
+services:
+  master_01:
+    image: postgres:16.2-alpine
+    healthcheck:
+      <<: *common-healthcheck
+    environment:
+      <<: *common-variables
+      PR_REPL_HOST: ${PR_REPL_PORT:-master_02}
+    volumes:
+      - master_01:/var/lib/postgresql/data
+      - ./scripts:/home/scripts
+    ports:
+      - '5432:5432'
+    networks:
+      - postgresql_default
+
+  master_02:
+    image: postgres:16.2-alpine
+    healthcheck:
+      <<: *common-healthcheck
+    environment:
+      <<: *common-variables
+    volumes:
+      - master_02:/var/lib/postgresql/data
+      - ./scripts:/home/scripts
+    ports:
+      - '5433:5432'
+    networks:
+      - postgresql_default
+
+  slave_01:
+    image: postgres:16.2-alpine
+    healthcheck:
+      <<: *common-healthcheck
+    environment:
+      <<: *common-variables
+      PR_REPL_HOST_2: ${PR_REPL_HOST_2:-master_02}
+    volumes:
+      - slave_01:/var/lib/postgresql/data
+      - ./scripts:/home/scripts
+    ports:
+      - '5434:5432'
+    networks:
+      - postgresql_default
+
+  slave_02:
+    image: postgres:16.2-alpine
+    healthcheck:
+      <<: *common-healthcheck
+    environment:
+      <<: *common-variables
+    volumes:
+      - slave_02:/var/lib/postgresql/data
+      - ./scripts:/home/scripts
+    ports:
+      - '5435:5432'
+    networks:
+      - postgresql_default
+
+volumes:
+  master_01: { }
+  master_02: { }
+  slave_01: { }
+  slave_02: { }
+
+networks:
+  postgresql_default: { }
