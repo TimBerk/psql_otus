@@ -1,4 +1,4 @@
-# Сбор и использование статистики
+# Работа с join'ами, статистикой
 
 <p align="left">
     <a href="https://www.docker.com/" target="blank">
