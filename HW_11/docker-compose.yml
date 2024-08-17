@@ -1,0 +1,24 @@
+version: '3.7'
+
+services:
+  db:
+    build:
+      context: .
+    healthcheck:
+      test: [ 'CMD-SHELL', 'pg_isready -U postgres' ]
+      interval: 10s
+      start_period: 40s
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      PGTZ: ${TIME_ZONE:-Europe/Moscow}
+    volumes:
+      - db:/var/lib/postgresql/data:rw
+      - ./initdb:/docker-entrypoint-initdb.d
+      - ./caps:/home/caps
+    ports:
+      - '5434:5432'
+
+volumes:
+  db: { }

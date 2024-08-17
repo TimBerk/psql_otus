@@ -3,3 +3,4 @@
 HW_02/postgres/*
 */theory/*
 */tmp/*
+*/initdb/*.sql
