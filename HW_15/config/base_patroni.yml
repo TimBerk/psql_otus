@@ -1,0 +1,72 @@
+scope: work
+namespace: /work-cluster/
+name: replica${PAT_NODE}
+
+restapi:
+  listen: 0.0.0.0:8008
+  connect_address: ${PAT_NODE_HOST}:8008
+
+etcd:
+  hosts: ${PAT_ETCD_HOSTS}
+
+bootstrap:
+  dcs:
+    ttl: 30
+    loop_wait: 10
+    retry_timeout: 10
+    maximum_lag_on_failover: 1048576
+    postgresql:
+      use_pg_rewind: true
+      use_slots: true
+      parameters:
+        hot_standby: "on"
+        wal_level: replica
+        max_wal_senders: 10
+        max_replication_slots: 10
+        wal_log_hints: "on"
+        archive_mode: "on"
+        archive_timeout: 600s
+        archive_command: "cp -f %p /db/pg_archived/%f"
+
+  initdb:
+    - encoding: UTF8
+    - data-checksums
+    - locale: en_US.UTF8
+
+  pg_hba:
+    - host replication replicator ::1/128 md5
+    - host replication replicator 127.0.0.1/8 md5
+    - host replication replicator ${PAT_NODE_1}/24 md5
+    - host replication replicator ${PAT_NODE_2}/24 md5
+    - host replication replicator ${PAT_NODE_3}/24 md5
+    - host all all 0.0.0.0/0 md5
+
+  users:
+    rebrain_admin:
+      password: rebrain_admin_password
+      options:
+      - createrole
+      - createdb
+
+postgresql:
+  listen: 0.0.0.0:5432
+  connect_address: ${PAT_NODE_HOST}:5432
+  data_dir: /etc/patroni/pgdata
+  bin_dir: /usr/lib/postgresql/13/bin
+  pgpass: /tmp/pgpass0
+  authentication:
+    replication:
+      username: replicator
+      password: replicatorSuperHarDpwd
+    superuser:
+      username: root
+      password: admin
+  create_replica_methods:
+    basebackup:
+      checkpoint: 'fast'
+  parameters:
+    unix_socket_directories: '/var/run/postgresql'
+    external_pid_file: '/var/run/postgresql/13-main.pid'
+  logging_collector: "on"
+  log_directory: "/var/log/postgresql"
+  log_filename: "postgresql-13-main.log"
